@@ -7,6 +7,11 @@ namespace CurrencyConverter.Application.Common.Interfaces;
 public interface ICurrentUserService
 {
     /// <summary>
+    /// The ID of the current authenticated user, or <c>null</c> when unauthenticated.
+    /// </summary>
+    Guid? UserId { get; }
+
+    /// <summary>
     /// Whether the current HTTP request carries a valid, authenticated identity.
     /// </summary>
     bool IsAuthenticated { get; }

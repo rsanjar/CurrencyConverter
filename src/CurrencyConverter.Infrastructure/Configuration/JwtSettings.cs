@@ -41,6 +41,18 @@ public sealed class JwtSettings
     public int ExpirationMinutes { get; set; } = 60;
 
     /// <summary>
+    /// Test username accepted by <c>POST /api/auth/token</c> in development.
+    /// Leave empty in production.
+    /// </summary>
+    public string TestUsername { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Test password accepted by <c>POST /api/auth/token</c> in development.
+    /// Leave empty in production.
+    /// </summary>
+    public string TestPassword { get; set; } = string.Empty;
+
+    /// <summary>
     /// Returns true when asymmetric RSA validation is configured.
     /// </summary>
     public bool UseAsymmetricValidation => !string.IsNullOrWhiteSpace(PublicKey);

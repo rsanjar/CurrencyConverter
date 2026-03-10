@@ -5,12 +5,14 @@ using CurrencyConverter.Application.Features.ExchangeRates.Queries.GetHistorical
 using CurrencyConverter.Application.Features.ExchangeRates.Queries.GetLatestRates;
 using CurrencyConverter.Contracts.Features.ExchangeRates.Responses;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CurrencyConverter.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ExchangeRatesController(IMediator mediator) : ControllerBase
 {
     [EndpointSummary("To target currencies")]
