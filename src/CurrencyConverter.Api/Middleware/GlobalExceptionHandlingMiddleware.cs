@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using CurrencyConverter.Application.Common.Exceptions;
 using FluentValidation;
 
 namespace CurrencyConverter.Api.Middleware;
@@ -21,6 +22,16 @@ public class GlobalExceptionHandlingMiddleware(RequestDelegate next, ILogger<Glo
             logger.LogWarning(ex, "Validation error occurred");
             await WriteErrorAsync(context, HttpStatusCode.UnprocessableEntity, "Validation failed",
                 ex.Errors.Select(e => e.ErrorMessage).ToList());
+        }
+        catch (UnauthorizedException ex)
+        {
+            logger.LogWarning("Unauthorized access attempt: {Message}", ex.Message);
+            await WriteErrorAsync(context, HttpStatusCode.Unauthorized, ex.Message);
+        }
+        catch (ForbiddenAccessException ex)
+        {
+            logger.LogWarning("Forbidden access attempt: {Message}", ex.Message);
+            await WriteErrorAsync(context, HttpStatusCode.Forbidden, ex.Message);
         }
         catch (HttpRequestException ex)
         {

@@ -1,5 +1,7 @@
+using CurrencyConverter.Application.Common.Security;
 using CurrencyConverter.Application.Messaging;
 using CurrencyConverter.Contracts.Features.ExchangeRates.Responses;
+using TheTechLoop.HybridCache.MediatR.Abstractions;
 
 namespace CurrencyConverter.Application.Features.ExchangeRates.Queries.GetLatestRates;
 
@@ -8,4 +10,10 @@ namespace CurrencyConverter.Application.Features.ExchangeRates.Queries.GetLatest
 /// </summary>
 public record GetLatestRatesQuery(
     string BaseCurrency = "EUR",
-    IEnumerable<string>? TargetCurrencies = null) : IQuery<ExchangeRateResponse>;
+    IEnumerable<string>? TargetCurrencies = null) : IQuery<ExchangeRateResponse>, ICacheable, IAuthorizable
+{
+    string ICacheable.CacheKey =>
+        $"ExchangeRates:Latest:{BaseCurrency}:{string.Join("-", (TargetCurrencies ?? Enumerable.Empty<string>()).OrderBy(x => x))}";
+
+    TimeSpan ICacheable.CacheDuration => TimeSpan.FromMinutes(5);
+}
