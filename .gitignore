@@ -1,0 +1,34 @@
+# Build artifacts
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# JetBrains
+.idea/
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+**/packages/
+!**/packages/build/
+.nuget/
+nuget.config
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# test results
+TestResults/
+coverage/
+*.trx
+*.xml
+
+# Docker
+.env
