@@ -38,6 +38,19 @@ public class FrankfurterService(HttpClient httpClient) : IFrankfurterService
     }
 
     /// <inheritdoc/>
+    public async Task<HistoricalRatesRangeData> GetHistoricalRatesRangeAsync(
+        DateOnly startDate,
+        DateOnly endDate,
+        string baseCurrency = "EUR",
+        IEnumerable<string>? targetCurrencies = null,
+        CancellationToken cancellationToken = default)
+    {
+        var endpoint = $"{startDate:yyyy-MM-dd}..{endDate:yyyy-MM-dd}";
+        var url = BuildUrl(endpoint, baseCurrency, targetCurrencies);
+        return await FetchHistoricalRatesRangeAsync(url, cancellationToken);
+    }
+
+    /// <inheritdoc/>
     public async Task<ExchangeRateData> ConvertAsync(
         decimal amount,
         string fromCurrency,
@@ -79,6 +92,30 @@ public class FrankfurterService(HttpClient httpClient) : IFrankfurterService
             dto.Rates);
     }
 
+    private async Task<HistoricalRatesRangeData> FetchHistoricalRatesRangeAsync(
+        string url,
+        CancellationToken cancellationToken)
+    {
+        var response = await httpClient.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        var dto = JsonSerializer.Deserialize<FrankfurterHistoricalRangeResponseDto>(json, JsonOptions)
+                  ?? throw new InvalidOperationException("Unexpected null response from Frankfurter API.");
+
+        var ratesByDate = dto.Rates.ToDictionary(
+            entry => DateOnly.Parse(entry.Key),
+            entry => (IReadOnlyDictionary<string, decimal>)entry.Value,
+            EqualityComparer<DateOnly>.Default);
+
+        return new HistoricalRatesRangeData(
+            dto.Amount,
+            dto.Base,
+            DateOnly.Parse(dto.StartDate),
+            DateOnly.Parse(dto.EndDate),
+            ratesByDate);
+    }
+
     private static string BuildUrl(
         string endpoint,
         string baseCurrency,
@@ -118,5 +155,23 @@ public class FrankfurterService(HttpClient httpClient) : IFrankfurterService
 
         [JsonPropertyName("rates")]
         public Dictionary<string, decimal> Rates { get; init; } = new();
+    }
+
+    private sealed class FrankfurterHistoricalRangeResponseDto
+    {
+        [JsonPropertyName("amount")]
+        public decimal Amount { get; init; }
+
+        [JsonPropertyName("base")]
+        public string Base { get; init; } = string.Empty;
+
+        [JsonPropertyName("start_date")]
+        public string StartDate { get; init; } = string.Empty;
+
+        [JsonPropertyName("end_date")]
+        public string EndDate { get; init; } = string.Empty;
+
+        [JsonPropertyName("rates")]
+        public Dictionary<string, Dictionary<string, decimal>> Rates { get; init; } = new();
     }
 }

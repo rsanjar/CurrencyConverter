@@ -52,6 +52,21 @@ public interface IFrankfurterService
     /// <param name="cancellationToken">Cancellation token.</param>
     Task<IReadOnlyDictionary<string, string>> GetAvailableCurrenciesAsync(
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets historical exchange rates for the specified date range.
+    /// </summary>
+    /// <param name="startDate">Range start date (inclusive).</param>
+    /// <param name="endDate">Range end date (inclusive).</param>
+    /// <param name="baseCurrency">The base currency code (default: EUR).</param>
+    /// <param name="targetCurrencies">Optional list of target currency codes to filter results.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<HistoricalRatesRangeData> GetHistoricalRatesRangeAsync(
+        DateOnly startDate,
+        DateOnly endDate,
+        string baseCurrency = "EUR",
+        IEnumerable<string>? targetCurrencies = null,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -62,3 +77,13 @@ public record ExchangeRateData(
     string Base,
     DateOnly Date,
     IReadOnlyDictionary<string, decimal> Rates);
+
+/// <summary>
+/// Represents a historical range of exchange rates returned from the Frankfurter API.
+/// </summary>
+public record HistoricalRatesRangeData(
+    decimal Amount,
+    string Base,
+    DateOnly StartDate,
+    DateOnly EndDate,
+    IReadOnlyDictionary<DateOnly, IReadOnlyDictionary<string, decimal>> RatesByDate);
