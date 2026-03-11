@@ -1,15 +1,18 @@
+using CurrencyConverter.Api.Configuration;
 using CurrencyConverter.Api.Extensions;
 using CurrencyConverter.Application.Features.Currencies.Queries.GetAvailableCurrencies;
 using CurrencyConverter.Contracts.Features.Currencies.Responses;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CurrencyConverter.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
+[EnableRateLimiting(RateLimitPolicies.Authenticated)]
 public class CurrenciesController(IMediator mediator) : ControllerBase
 {
     /// <summary>

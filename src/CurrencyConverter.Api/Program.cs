@@ -26,6 +26,9 @@ builder.Services.AddCurrentUser();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// ── Rate Limiting ─────────────────────────────────────────────────────────
+builder.Services.AddApiRateLimiting(builder.Configuration);
+
 // ── Caching ───────────────────────────────────────────────────────────────
 //NOTE: This package belongs to me, it's not a third party library.
 // TheTechLoop.HybridCache is added at the end to ensure it can wrap all
@@ -73,6 +76,7 @@ var corsPolicy = builder.Configuration.GetSection(CorsConfig.SectionName)
 app.UseCors(corsPolicy);
 
 app.UseAuthentication();
+app.UseApiRateLimiting();
 app.UseAuthorization();
 app.MapControllers();
 

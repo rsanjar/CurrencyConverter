@@ -25,12 +25,13 @@ public class WebAppFactory : WebApplicationFactory<Program>
             // Provide known test credentials so the auth endpoint is enabled in the test server.
             // appsettings.Development.json may set different credentials; we override here to keep
             // tests self-contained and independent of local developer settings.
-            // Caching is disabled so every test gets a cold, isolated response.
+            // Caching and rate limiting are both disabled so every test gets a cold, isolated response.
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["JwtSettings:TestUsername"] = "testuser",
                 ["JwtSettings:TestPassword"] = "testpass",
                 ["TheTechLoopCache:Enabled"] = "false",
+                ["RateLimiting:Enabled"] = "false",
             });
         });
 

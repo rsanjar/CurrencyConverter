@@ -1,3 +1,4 @@
+using CurrencyConverter.Api.Configuration;
 using CurrencyConverter.Api.Extensions;
 using CurrencyConverter.Application.Features.ExchangeRates.Queries.ConvertCurrency;
 using CurrencyConverter.Application.Features.ExchangeRates.Queries.GetHistoricalRates;
@@ -7,12 +8,14 @@ using CurrencyConverter.Contracts.Features.ExchangeRates.Responses;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CurrencyConverter.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
+[EnableRateLimiting(RateLimitPolicies.Authenticated)]
 public class ExchangeRatesController(IMediator mediator) : ControllerBase
 {
     [EndpointSummary("To target currencies")]

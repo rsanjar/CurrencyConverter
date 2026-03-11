@@ -1,9 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using CurrencyConverter.Api.Configuration;
 using CurrencyConverter.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -20,6 +22,7 @@ namespace CurrencyConverter.Api.Controllers;
 [ApiController]
 [Route("api/auth")]
 [AllowAnonymous]
+[EnableRateLimiting(RateLimitPolicies.Auth)]
 public class AuthController(IOptions<JwtSettings> jwtOptions) : ControllerBase
 {
     /// <summary>
