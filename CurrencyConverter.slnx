@@ -1,10 +1,8 @@
 <Solution>
-  <Folder Name="/Solution Items/">
+  <Folder Name="/src/">
     <File Path="Dockerfile" />
     <File Path="Dockerfile.tests" />
     <File Path="nuget.config" />
-  </Folder>
-  <Folder Name="/src/">
     <Project Path="src/CurrencyConverter.Api/CurrencyConverter.Api.csproj" />
     <Project Path="src/CurrencyConverter.Application/CurrencyConverter.Application.csproj" />
     <Project Path="src/CurrencyConverter.Contracts/CurrencyConverter.Contracts.csproj" />
