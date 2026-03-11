@@ -21,13 +21,14 @@ public class WebAppFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureAppConfiguration((_, config) =>
         {
-            // Clear TestUsername so the auth endpoint accepts any credentials in tests.
-            // appsettings.Development.json sets real dev credentials which would break tests.
-            // Also disable caching so tests are fully isolated from each other.
+            // Provide known test credentials so the auth endpoint is enabled in the test server.
+            // appsettings.Development.json may set different credentials; we override here to keep
+            // tests self-contained and independent of local developer settings.
+            // Caching is disabled so every test gets a cold, isolated response.
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["JwtSettings:TestUsername"] = string.Empty,
-                ["JwtSettings:TestPassword"] = string.Empty,
+                ["JwtSettings:TestUsername"] = "testuser",
+                ["JwtSettings:TestPassword"] = "testpass",
                 ["TheTechLoopCache:Enabled"] = "false",
             });
         });
