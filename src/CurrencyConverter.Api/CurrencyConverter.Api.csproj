@@ -34,6 +34,7 @@
     <UserSecretsId>430ff1aa-d21a-43c0-a66a-f13572d2c39c</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..</DockerfileContext>
+    <DockerfilePath>..\..\Dockerfile</DockerfilePath>
   </PropertyGroup>
 
 </Project>
