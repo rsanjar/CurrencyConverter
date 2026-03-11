@@ -13,6 +13,9 @@ builder.AddSerilog();
 // Observability — OpenTelemetry traces and metrics
 //builder.AddOpenTelemetry();
 
+// Forward X-Forwarded-For / X-Forwarded-Proto from Traefik so Request.Scheme is "https"
+builder.Services.ForwardHeaders();
+
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -38,6 +41,10 @@ builder.Services.AddHealthChecks()
     .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("API is running"));
 
 var app = builder.Build();
+
+// Forwarded headers must be the first middleware so every subsequent piece of
+// middleware (including OpenAPI/Scalar server-URL generation) sees the real scheme.
+app.UseForwardedHeaders();
 
 // Global exception handling — must be first in pipeline
 app.UseGlobalExceptionHandler();
