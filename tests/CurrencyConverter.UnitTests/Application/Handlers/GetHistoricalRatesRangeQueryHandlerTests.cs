@@ -7,12 +7,14 @@ namespace CurrencyConverter.UnitTests.Application.Handlers;
 
 public class GetHistoricalRatesRangeQueryHandlerTests
 {
-    private readonly IFrankfurterService _service = Substitute.For<IFrankfurterService>();
+    private readonly IExchangeRateProvider _provider = Substitute.For<IExchangeRateProvider>();
+    private readonly IExchangeRateProviderFactory _factory = Substitute.For<IExchangeRateProviderFactory>();
     private readonly GetHistoricalRatesRangeQueryHandler _handler;
 
     public GetHistoricalRatesRangeQueryHandlerTests()
     {
-        _handler = new GetHistoricalRatesRangeQueryHandler(_service);
+        _factory.GetDefaultProvider().Returns(_provider);
+        _handler = new GetHistoricalRatesRangeQueryHandler(_factory);
     }
 
     private static HistoricalRatesRangeData BuildRangeData(int dayCount = 5)
@@ -31,7 +33,7 @@ public class GetHistoricalRatesRangeQueryHandlerTests
     public async Task Handle_ValidQuery_ReturnsSuccess()
     {
         var data = BuildRangeData(3);
-        _service.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(data);
 
         var result = await _handler.Handle(new GetHistoricalRatesRangeQuery(data.StartDate, data.EndDate, "EUR"), CancellationToken.None);
@@ -43,7 +45,7 @@ public class GetHistoricalRatesRangeQueryHandlerTests
     public async Task Handle_Page1_ReturnsFirstPageItems()
     {
         var data = BuildRangeData(5);
-        _service.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(data);
 
         var result = await _handler.Handle(
@@ -61,7 +63,7 @@ public class GetHistoricalRatesRangeQueryHandlerTests
     public async Task Handle_LastPage_ReturnsRemainingItems()
     {
         var data = BuildRangeData(5);
-        _service.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(data);
 
         var result = await _handler.Handle(
@@ -75,7 +77,7 @@ public class GetHistoricalRatesRangeQueryHandlerTests
     public async Task Handle_PageBeyondTotal_ReturnsEmptyItems()
     {
         var data = BuildRangeData(3);
-        _service.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(data);
 
         var result = await _handler.Handle(
@@ -93,7 +95,7 @@ public class GetHistoricalRatesRangeQueryHandlerTests
             new DateOnly(2023, 1, 1), new DateOnly(2023, 1, 1),
             new Dictionary<DateOnly, IReadOnlyDictionary<string, decimal>>());
 
-        _service.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(emptyData);
 
         var result = await _handler.Handle(
@@ -117,7 +119,7 @@ public class GetHistoricalRatesRangeQueryHandlerTests
         };
         var data = new HistoricalRatesRangeData(1m, "EUR", startDate, startDate.AddDays(2), ratesByDate);
 
-        _service.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(data);
 
         var result = await _handler.Handle(
@@ -131,7 +133,7 @@ public class GetHistoricalRatesRangeQueryHandlerTests
     public async Task Handle_TotalPagesRoundsUp()
     {
         var data = BuildRangeData(7);
-        _service.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(data);
 
         var result = await _handler.Handle(
@@ -145,7 +147,7 @@ public class GetHistoricalRatesRangeQueryHandlerTests
     public async Task Handle_MapsBaseAndDateRange()
     {
         var data = BuildRangeData(2);
-        _service.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(data);
 
         var result = await _handler.Handle(

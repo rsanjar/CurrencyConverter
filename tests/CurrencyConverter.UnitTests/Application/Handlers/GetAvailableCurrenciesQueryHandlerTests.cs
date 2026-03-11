@@ -7,18 +7,20 @@ namespace CurrencyConverter.UnitTests.Application.Handlers;
 
 public class GetAvailableCurrenciesQueryHandlerTests
 {
-    private readonly IFrankfurterService _service = Substitute.For<IFrankfurterService>();
+    private readonly IExchangeRateProvider _provider = Substitute.For<IExchangeRateProvider>();
+    private readonly IExchangeRateProviderFactory _factory = Substitute.For<IExchangeRateProviderFactory>();
     private readonly GetAvailableCurrenciesQueryHandler _handler;
 
     public GetAvailableCurrenciesQueryHandlerTests()
     {
-        _handler = new GetAvailableCurrenciesQueryHandler(_service);
+        _factory.GetDefaultProvider().Returns(_provider);
+        _handler = new GetAvailableCurrenciesQueryHandler(_factory);
     }
 
     [Fact]
     public async Task Handle_ValidQuery_ReturnsSuccess()
     {
-        _service.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
+        _provider.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, string> { ["EUR"] = "Euro" });
 
         var result = await _handler.Handle(new GetAvailableCurrenciesQuery(), CancellationToken.None);
@@ -29,7 +31,7 @@ public class GetAvailableCurrenciesQueryHandlerTests
     [Fact]
     public async Task Handle_MapsCodeAndNameCorrectly()
     {
-        _service.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
+        _provider.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, string> { ["EUR"] = "Euro" });
 
         var result = await _handler.Handle(new GetAvailableCurrenciesQuery(), CancellationToken.None);
@@ -41,7 +43,7 @@ public class GetAvailableCurrenciesQueryHandlerTests
     [Fact]
     public async Task Handle_ReturnsCurrenciesOrderedByCodeAscending()
     {
-        _service.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
+        _provider.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, string>
             {
                 ["USD"] = "US Dollar",
@@ -58,7 +60,7 @@ public class GetAvailableCurrenciesQueryHandlerTests
     [Fact]
     public async Task Handle_EmptyDictionary_ReturnsSuccessWithEmptyList()
     {
-        _service.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
+        _provider.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, string>());
 
         var result = await _handler.Handle(new GetAvailableCurrenciesQuery(), CancellationToken.None);
@@ -79,7 +81,7 @@ public class GetAvailableCurrenciesQueryHandlerTests
             ["CHF"] = "Swiss Franc",
         };
 
-        _service.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
+        _provider.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(currencies);
 
         var result = await _handler.Handle(new GetAvailableCurrenciesQuery(), CancellationToken.None);
@@ -91,12 +93,12 @@ public class GetAvailableCurrenciesQueryHandlerTests
     [Fact]
     public async Task Handle_PassesCancellationToken()
     {
-        _service.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
+        _provider.GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, string>());
         using var cts = new CancellationTokenSource();
 
         await _handler.Handle(new GetAvailableCurrenciesQuery(), cts.Token);
 
-        await _service.Received(1).GetAvailableCurrenciesAsync(cts.Token);
+        await _provider.Received(1).GetAvailableCurrenciesAsync(cts.Token);
     }
 }

@@ -36,8 +36,9 @@ public static class DependencyInjection
                 .GetSection(FrankfurterOptions.SectionName)
                 .Get<FrankfurterOptions>() ?? new FrankfurterOptions();
 
-            // ── HTTP Clients ─────────────────────────────────────────────────
-            services.AddHttpClient<IFrankfurterService, FrankfurterService>(client =>
+            // Register the typed HTTP client for FrankfurterService.
+            // The factory resolves FrankfurterService directly via IServiceProvider.
+            services.AddHttpClient<FrankfurterService>(client =>
                 {
                     client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
                     // Timeout is governed by the resilience pipeline's TotalRequestTimeout;
@@ -62,6 +63,12 @@ public static class DependencyInjection
                     o.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(options.CircuitBreakerBreakDurationSeconds);
                     o.CircuitBreaker.MinimumThroughput = options.CircuitBreakerMinimumThroughput;
                 });
+
+            // ── Provider factory ──────────────────────────────────────────────
+            services.Configure<ExchangeRateProviderOptions>(
+                configuration.GetSection(ExchangeRateProviderOptions.SectionName));
+
+            services.AddTransient<IExchangeRateProviderFactory, ExchangeRateProviderFactory>();
 
             return services;
         }

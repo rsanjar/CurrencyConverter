@@ -59,7 +59,7 @@ public class AuthControllerTests(WebAppFactory factory) : IntegrationTestBase(fa
         Client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        FrankfurterService
+        ExchangeRateProvider
             .GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, string> { ["EUR"] = "Euro" });
 

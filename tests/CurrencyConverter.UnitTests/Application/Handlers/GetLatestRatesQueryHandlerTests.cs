@@ -7,12 +7,14 @@ namespace CurrencyConverter.UnitTests.Application.Handlers;
 
 public class GetLatestRatesQueryHandlerTests
 {
-    private readonly IFrankfurterService _service = Substitute.For<IFrankfurterService>();
+    private readonly IExchangeRateProvider _provider = Substitute.For<IExchangeRateProvider>();
+    private readonly IExchangeRateProviderFactory _factory = Substitute.For<IExchangeRateProviderFactory>();
     private readonly GetLatestRatesQueryHandler _handler;
 
     public GetLatestRatesQueryHandlerTests()
     {
-        _handler = new GetLatestRatesQueryHandler(_service);
+        _factory.GetDefaultProvider().Returns(_provider);
+        _handler = new GetLatestRatesQueryHandler(_factory);
     }
 
     private static ExchangeRateData MakeData(string baseCurrency = "EUR") =>
@@ -22,7 +24,7 @@ public class GetLatestRatesQueryHandlerTests
     [Fact]
     public async Task Handle_ValidQuery_ReturnsSuccess()
     {
-        _service.GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(MakeData());
 
         var result = await _handler.Handle(new GetLatestRatesQuery("EUR"), CancellationToken.None);
@@ -35,7 +37,7 @@ public class GetLatestRatesQueryHandlerTests
     {
         var date = new DateOnly(2024, 3, 20);
         var rates = new Dictionary<string, decimal> { ["JPY"] = 160m };
-        _service.GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(new ExchangeRateData(1m, "USD", date, rates));
 
         var result = await _handler.Handle(new GetLatestRatesQuery("USD"), CancellationToken.None);
@@ -49,46 +51,46 @@ public class GetLatestRatesQueryHandlerTests
     [Fact]
     public async Task Handle_PassesBaseCurrencyToService()
     {
-        _service.GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(MakeData("USD"));
 
         await _handler.Handle(new GetLatestRatesQuery("USD"), CancellationToken.None);
 
-        await _service.Received(1).GetLatestRatesAsync("USD", Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>());
+        await _provider.Received(1).GetLatestRatesAsync("USD", Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_PassesTargetCurrenciesToService()
     {
         var targets = new[] { "USD", "GBP" };
-        _service.GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(MakeData());
 
         await _handler.Handle(new GetLatestRatesQuery("EUR", targets), CancellationToken.None);
 
-        await _service.Received(1).GetLatestRatesAsync("EUR", targets, Arg.Any<CancellationToken>());
+        await _provider.Received(1).GetLatestRatesAsync("EUR", targets, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_PassesCancellationToken()
     {
-        _service.GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(MakeData());
         using var cts = new CancellationTokenSource();
 
         await _handler.Handle(new GetLatestRatesQuery("EUR"), cts.Token);
 
-        await _service.Received(1).GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), cts.Token);
+        await _provider.Received(1).GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), cts.Token);
     }
 
     [Fact]
     public async Task Handle_NullTargetCurrencies_PassesNullToService()
     {
-        _service.GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
+        _provider.GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(MakeData());
 
         await _handler.Handle(new GetLatestRatesQuery("EUR", null), CancellationToken.None);
 
-        await _service.Received(1).GetLatestRatesAsync("EUR", null, Arg.Any<CancellationToken>());
+        await _provider.Received(1).GetLatestRatesAsync("EUR", null, Arg.Any<CancellationToken>());
     }
 }

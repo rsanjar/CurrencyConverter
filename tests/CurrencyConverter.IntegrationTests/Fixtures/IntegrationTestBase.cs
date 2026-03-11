@@ -14,7 +14,7 @@ public abstract class IntegrationTestBase : IClassFixture<WebAppFactory>
 {
     protected readonly WebAppFactory Factory;
     protected readonly HttpClient Client;
-    protected readonly IFrankfurterService FrankfurterService;
+    protected readonly IExchangeRateProvider ExchangeRateProvider;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -28,10 +28,10 @@ public abstract class IntegrationTestBase : IClassFixture<WebAppFactory>
         {
             AllowAutoRedirect = false,
         });
-        FrankfurterService = factory.FrankfurterService;
+        ExchangeRateProvider = factory.ExchangeRateProvider;
     }
 
-    /// <summary>Obtains a JWT from the auth endpoint (any credentials are accepted when TestUsername is empty).</summary>
+    /// <summary>Obtains a JWT from the auth endpoint using the configured test credentials.</summary>
     protected async Task<string> GetAuthTokenAsync(string username = "testuser", string password = "testpass")
     {
         var response = await Client.PostAsJsonAsync("/api/auth/token", new { Username = username, Password = password });

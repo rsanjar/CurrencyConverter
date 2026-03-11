@@ -1,3 +1,4 @@
+using CurrencyConverter.Domain.Enums;
 using CurrencyConverter.Domain.Interfaces;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -9,13 +10,13 @@ using NSubstitute;
 namespace CurrencyConverter.IntegrationTests.Fixtures;
 
 /// <summary>
-/// Shared test server factory. Replaces <see cref="IFrankfurterService"/> with an
+/// Shared test server factory. Replaces <see cref="IExchangeRateProviderFactory"/> with an
 /// NSubstitute mock so integration tests never hit the real Frankfurter API.
 /// </summary>
 public class WebAppFactory : WebApplicationFactory<Program>
 {
-    /// <summary>The mock that every test class in this fixture can configure and verify.</summary>
-    public IFrankfurterService FrankfurterService { get; } = Substitute.For<IFrankfurterService>();
+    /// <summary>The mock provider that every test class in this fixture can configure and verify.</summary>
+    public IExchangeRateProvider ExchangeRateProvider { get; } = Substitute.For<IExchangeRateProvider>();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -35,11 +36,15 @@ public class WebAppFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            // Remove the typed-client registration produced by AddHttpClient<IFrankfurterService, …>
-            services.RemoveAll<IFrankfurterService>();
+            // Replace the real factory with a mock so tests control every provider response
+            // without touching the network or real HTTP clients.
+            services.RemoveAll<IExchangeRateProviderFactory>();
 
-            // Register our mock as a singleton so every controller resolution uses it.
-            services.AddSingleton(_ => FrankfurterService);
+            var mockFactory = Substitute.For<IExchangeRateProviderFactory>();
+            mockFactory.GetDefaultProvider().Returns(ExchangeRateProvider);
+            mockFactory.GetProvider(Arg.Any<ExchangeRateProviderType>()).Returns(ExchangeRateProvider);
+
+            services.AddSingleton(mockFactory);
         });
     }
 }

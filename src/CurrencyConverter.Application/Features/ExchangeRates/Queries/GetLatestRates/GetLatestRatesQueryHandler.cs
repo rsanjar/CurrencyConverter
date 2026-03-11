@@ -5,14 +5,16 @@ using CurrencyConverter.Domain.Interfaces;
 
 namespace CurrencyConverter.Application.Features.ExchangeRates.Queries.GetLatestRates;
 
-public class GetLatestRatesQueryHandler(IFrankfurterService frankfurterService)
+public class GetLatestRatesQueryHandler(IExchangeRateProviderFactory providerFactory)
     : IQueryHandler<GetLatestRatesQuery, ExchangeRateResponse>
 {
     public async Task<Result<ExchangeRateResponse>> Handle(
         GetLatestRatesQuery request,
         CancellationToken cancellationToken)
     {
-        var data = await frankfurterService.GetLatestRatesAsync(
+        var provider = providerFactory.GetDefaultProvider();
+
+        var data = await provider.GetLatestRatesAsync(
             request.BaseCurrency,
             request.TargetCurrencies,
             cancellationToken);

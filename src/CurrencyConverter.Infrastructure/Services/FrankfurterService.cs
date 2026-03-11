@@ -5,10 +5,10 @@ using CurrencyConverter.Domain.Interfaces;
 namespace CurrencyConverter.Infrastructure.Services;
 
 /// <summary>
-/// Implementation of <see cref="IFrankfurterService"/> that calls the public Frankfurter REST API.
+/// <see cref="IExchangeRateProvider"/> implementation that calls the public Frankfurter REST API.
 /// API docs: https://www.frankfurter.app/docs/
 /// </summary>
-public class FrankfurterService(HttpClient httpClient) : IFrankfurterService
+public class FrankfurterService(HttpClient httpClient) : IExchangeRateProvider
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

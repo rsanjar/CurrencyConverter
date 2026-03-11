@@ -7,12 +7,14 @@ namespace CurrencyConverter.UnitTests.Application.Handlers;
 
 public class ConvertCurrencyQueryHandlerTests
 {
-    private readonly IFrankfurterService _service = Substitute.For<IFrankfurterService>();
+    private readonly IExchangeRateProvider _provider = Substitute.For<IExchangeRateProvider>();
+    private readonly IExchangeRateProviderFactory _factory = Substitute.For<IExchangeRateProviderFactory>();
     private readonly ConvertCurrencyQueryHandler _handler;
 
     public ConvertCurrencyQueryHandlerTests()
     {
-        _handler = new ConvertCurrencyQueryHandler(_service);
+        _factory.GetDefaultProvider().Returns(_provider);
+        _handler = new ConvertCurrencyQueryHandler(_factory);
     }
 
     private static ExchangeRateData MakeConversionData(string from = "EUR") =>
@@ -22,7 +24,7 @@ public class ConvertCurrencyQueryHandlerTests
     [Fact]
     public async Task Handle_ValidQuery_ReturnsSuccess()
     {
-        _service.ConvertAsync(100m, "EUR", Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
+        _provider.ConvertAsync(100m, "EUR", Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
             .Returns(MakeConversionData());
 
         var result = await _handler.Handle(new ConvertCurrencyQuery(100m, "EUR", ["USD"]), CancellationToken.None);
@@ -83,19 +85,19 @@ public class ConvertCurrencyQueryHandlerTests
     {
         await _handler.Handle(new ConvertCurrencyQuery(100m, "TRY", ["USD"]), CancellationToken.None);
 
-        await _service.DidNotReceive()
+        await _provider.DidNotReceive()
             .ConvertAsync(Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_NormalizesFromCurrencyToUppercase()
     {
-        _service.ConvertAsync(Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
+        _provider.ConvertAsync(Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
             .Returns(MakeConversionData("EUR"));
 
         await _handler.Handle(new ConvertCurrencyQuery(100m, "eur", ["gbp"]), CancellationToken.None);
 
-        await _service.Received(1).ConvertAsync(
+        await _provider.Received(1).ConvertAsync(
             100m,
             "EUR",
             Arg.Is<IEnumerable<string>>(x => x.Contains("GBP")),
@@ -105,12 +107,12 @@ public class ConvertCurrencyQueryHandlerTests
     [Fact]
     public async Task Handle_NormalizesToCurrenciesToUppercase()
     {
-        _service.ConvertAsync(Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
+        _provider.ConvertAsync(Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
             .Returns(MakeConversionData());
 
         await _handler.Handle(new ConvertCurrencyQuery(100m, "EUR", ["usd", "gbp"]), CancellationToken.None);
 
-        await _service.Received(1).ConvertAsync(
+        await _provider.Received(1).ConvertAsync(
             100m,
             "EUR",
             Arg.Is<IEnumerable<string>>(x => x.Contains("USD") && x.Contains("GBP")),
@@ -122,7 +124,7 @@ public class ConvertCurrencyQueryHandlerTests
     {
         var date = new DateOnly(2024, 5, 1);
         var rates = new Dictionary<string, decimal> { ["GBP"] = 0.85m };
-        _service.ConvertAsync(Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
+        _provider.ConvertAsync(Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
             .Returns(new ExchangeRateData(100m, "EUR", date, rates));
 
         var result = await _handler.Handle(new ConvertCurrencyQuery(100m, "EUR", ["GBP"]), CancellationToken.None);

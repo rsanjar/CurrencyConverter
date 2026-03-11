@@ -44,7 +44,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     [Fact]
     public async Task GetLatest_WithValidRequest_Returns200AndRates()
     {
-        FrankfurterService
+        ExchangeRateProvider
             .GetLatestRatesAsync(Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(SampleRateData("USD"));
         await AuthenticateAsync();
@@ -84,7 +84,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     [Fact]
     public async Task GetHistorical_WithValidDate_Returns200()
     {
-        FrankfurterService
+        ExchangeRateProvider
             .GetHistoricalRatesAsync(Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(SampleRateData());
         await AuthenticateAsync();
@@ -123,7 +123,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     [Fact]
     public async Task Convert_WithValidRequest_Returns200()
     {
-        FrankfurterService
+        ExchangeRateProvider
             .ConvertAsync(Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>>(), Arg.Any<CancellationToken>())
             .Returns(SampleRateData());
         await AuthenticateAsync();
@@ -202,7 +202,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     [Fact]
     public async Task GetHistory_WithValidRequest_Returns200WithPaginationFields()
     {
-        FrankfurterService
+        ExchangeRateProvider
             .GetHistoricalRatesRangeAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<string>(), Arg.Any<IEnumerable<string>?>(), Arg.Any<CancellationToken>())
             .Returns(SampleRangeData());
         await AuthenticateAsync();

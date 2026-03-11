@@ -5,7 +5,7 @@ using CurrencyConverter.Domain.Interfaces;
 
 namespace CurrencyConverter.Application.Features.ExchangeRates.Queries.ConvertCurrency;
 
-public class ConvertCurrencyQueryHandler(IFrankfurterService frankfurterService)
+public class ConvertCurrencyQueryHandler(IExchangeRateProviderFactory providerFactory)
     : IQueryHandler<ConvertCurrencyQuery, ConversionResponse>
 {
     // These currencies are restricted due to limitations in the Frankfurter API.
@@ -35,7 +35,9 @@ public class ConvertCurrencyQueryHandler(IFrankfurterService frankfurterService)
                 $"Currency conversion is not supported for: {joined}.");
         }
 
-        var data = await frankfurterService.ConvertAsync(
+        var provider = providerFactory.GetDefaultProvider();
+
+        var data = await provider.ConvertAsync(
             request.Amount,
             fromCurrency,
             toCurrencies,

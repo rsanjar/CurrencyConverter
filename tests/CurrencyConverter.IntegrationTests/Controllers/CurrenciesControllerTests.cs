@@ -19,7 +19,7 @@ public class CurrenciesControllerTests(WebAppFactory factory) : IntegrationTestB
     [Fact]
     public async Task GetAll_WithAuth_Returns200()
     {
-        FrankfurterService
+        ExchangeRateProvider
             .GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, string> { ["EUR"] = "Euro", ["USD"] = "US Dollar" });
         await AuthenticateAsync();
@@ -32,7 +32,7 @@ public class CurrenciesControllerTests(WebAppFactory factory) : IntegrationTestB
     [Fact]
     public async Task GetAll_ReturnsCurrencyListWithCodeAndName()
     {
-        FrankfurterService
+        ExchangeRateProvider
             .GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, string> { ["EUR"] = "Euro" });
         await AuthenticateAsync();
@@ -47,7 +47,7 @@ public class CurrenciesControllerTests(WebAppFactory factory) : IntegrationTestB
     [Fact]
     public async Task GetAll_ReturnsCurrenciesOrderedByCodeAscending()
     {
-        FrankfurterService
+        ExchangeRateProvider
             .GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, string>
             {
@@ -67,7 +67,7 @@ public class CurrenciesControllerTests(WebAppFactory factory) : IntegrationTestB
     [Fact]
     public async Task GetAll_EmptyResponse_Returns200()  
     {
-        FrankfurterService
+        ExchangeRateProvider
             .GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, string>());
         await AuthenticateAsync();
@@ -82,7 +82,7 @@ public class CurrenciesControllerTests(WebAppFactory factory) : IntegrationTestB
     {
         var currencies = Enumerable.Range(1, 10)
             .ToDictionary(i => $"C{i:D2}", i => $"Currency {i}");
-        FrankfurterService
+        ExchangeRateProvider
             .GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(currencies);
         await AuthenticateAsync();

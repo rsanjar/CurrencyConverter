@@ -5,14 +5,16 @@ using CurrencyConverter.Domain.Interfaces;
 
 namespace CurrencyConverter.Application.Features.Currencies.Queries.GetAvailableCurrencies;
 
-public class GetAvailableCurrenciesQueryHandler(IFrankfurterService frankfurterService)
+public class GetAvailableCurrenciesQueryHandler(IExchangeRateProviderFactory providerFactory)
     : IQueryHandler<GetAvailableCurrenciesQuery, IReadOnlyList<CurrencyResponse>>
 {
     public async Task<Result<IReadOnlyList<CurrencyResponse>>> Handle(
         GetAvailableCurrenciesQuery request,
         CancellationToken cancellationToken)
     {
-        var currencies = await frankfurterService.GetAvailableCurrenciesAsync(cancellationToken);
+        var provider = providerFactory.GetDefaultProvider();
+
+        var currencies = await provider.GetAvailableCurrenciesAsync(cancellationToken);
 
         var response = currencies
             .Select(kvp => new CurrencyResponse(kvp.Key, kvp.Value))
