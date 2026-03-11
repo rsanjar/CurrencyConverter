@@ -7,6 +7,7 @@
   <ItemGroup>
 	  <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
 	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3" />
+	  <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
 	  <PackageReference Include="Scalar.AspNetCore" Version="2.13.2" />
 
     <!-- Serilog -->
@@ -30,6 +31,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>430ff1aa-d21a-43c0-a66a-f13572d2c39c</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..\..</DockerfileContext>
   </PropertyGroup>
 
 </Project>

@@ -1,0 +1,46 @@
+# Standalone test runner image — builds the full solution and executes all test suites.
+#
+# Build context must be the repository root:
+#   docker build -f Dockerfile.tests -t currency-converter-tests .
+#   docker run --rm currency-converter-tests
+#
+# TRX reports are written to /app/test-results.
+# Bind-mount that path on the host or in CI to collect results after the container exits:
+#   docker run --rm -v ${PWD}/test-results:/app/test-results currency-converter-tests
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS test
+
+WORKDIR /src
+
+# ── Package sources ───────────────────────────────────────────────────────────
+COPY ["nuget.config", "."]
+
+# ── Solution file ─────────────────────────────────────────────────────────────
+COPY ["CurrencyConverter.slnx", "."]
+
+# ── Project files only (cache-efficient restore: copied before the full COPY) ─
+# Source projects
+COPY ["src/CurrencyConverter.Api/CurrencyConverter.Api.csproj",                             "src/CurrencyConverter.Api/"]
+COPY ["src/CurrencyConverter.Infrastructure/CurrencyConverter.Infrastructure.csproj",       "src/CurrencyConverter.Infrastructure/"]
+COPY ["src/CurrencyConverter.Application/CurrencyConverter.Application.csproj",             "src/CurrencyConverter.Application/"]
+COPY ["src/CurrencyConverter.Domain/CurrencyConverter.Domain.csproj",                       "src/CurrencyConverter.Domain/"]
+COPY ["src/CurrencyConverter.Contracts/CurrencyConverter.Contracts.csproj",                 "src/CurrencyConverter.Contracts/"]
+
+# Test projects
+COPY ["tests/CurrencyConverter.UnitTests/CurrencyConverter.UnitTests.csproj",               "tests/CurrencyConverter.UnitTests/"]
+COPY ["tests/CurrencyConverter.IntegrationTests/CurrencyConverter.IntegrationTests.csproj", "tests/CurrencyConverter.IntegrationTests/"]
+
+# ── Restore (solution-level resolves all source + test projects in one call) ──
+RUN dotnet restore "CurrencyConverter.slnx"
+
+# ── Full source copy ──────────────────────────────────────────────────────────
+COPY . .
+
+# ── Execute all test suites ───────────────────────────────────────────────────
+# TRX reports land in /app/test-results; bind-mount for CI artefact collection.
+ENTRYPOINT ["dotnet", "test", "CurrencyConverter.slnx", \
+    "--no-restore", \
+    "--configuration", "Release", \
+    "--logger", "trx;LogFileName=results.trx", \
+    "--results-directory", "/app/test-results", \
+    "--verbosity", "normal"]
