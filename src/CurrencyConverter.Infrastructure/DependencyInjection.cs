@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Polly;
 
 namespace CurrencyConverter.Infrastructure;
 
@@ -16,23 +17,51 @@ public static class DependencyInjection
     {
         public IServiceCollection AddInfrastructure(IConfiguration configuration)
         {
-            var options = configuration
-                .GetSection(FrankfurterOptions.SectionName)
-                .Get<FrankfurterOptions>() ?? new FrankfurterOptions();
 
             // ── HTTP Clients ─────────────────────────────────────────────────
-            services.AddHttpClient<IFrankfurterService, FrankfurterService>(client =>
-            {
-                client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
-                client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-                client.DefaultRequestHeaders.Add("Accept", "application/json");
-            });
+            services.AddFrankfurterClient(configuration);
 
             // ── CORS ─────────────────────────────────────────────────────────
             services.AddCorsPolicy(configuration);
 
             // ── JWT Bearer Authentication ─────────────────────────────────────
             services.AddJwtBearerAuthentication(configuration);
+
+            return services;
+        }
+        
+        private IServiceCollection AddFrankfurterClient(IConfiguration configuration)
+        {
+            var options = configuration
+                .GetSection(FrankfurterOptions.SectionName)
+                .Get<FrankfurterOptions>() ?? new FrankfurterOptions();
+
+            // ── HTTP Clients ─────────────────────────────────────────────────
+            services.AddHttpClient<IFrankfurterService, FrankfurterService>(client =>
+                {
+                    client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+                    // Timeout is governed by the resilience pipeline's TotalRequestTimeout;
+                    // setting InfiniteTimeSpan prevents HttpClient from racing the pipeline.
+                    client.Timeout = Timeout.InfiniteTimeSpan;
+                    client.DefaultRequestHeaders.Add("Accept", "application/json");
+                })
+                .AddStandardResilienceHandler(o =>
+                {
+                    // Total timeout covering all retries combined.
+                    o.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+
+                    // Exponential back-off with jitter.
+                    o.Retry.MaxRetryAttempts = options.RetryMaxAttempts;
+                    o.Retry.Delay = TimeSpan.FromSeconds(options.RetryBaseDelaySeconds);
+                    o.Retry.BackoffType = DelayBackoffType.Exponential;
+                    o.Retry.UseJitter = true;
+
+                    // Circuit breaker.
+                    o.CircuitBreaker.FailureRatio = options.CircuitBreakerFailureRatio;
+                    o.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(options.CircuitBreakerSamplingDurationSeconds);
+                    o.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(options.CircuitBreakerBreakDurationSeconds);
+                    o.CircuitBreaker.MinimumThroughput = options.CircuitBreakerMinimumThroughput;
+                });
 
             return services;
         }
