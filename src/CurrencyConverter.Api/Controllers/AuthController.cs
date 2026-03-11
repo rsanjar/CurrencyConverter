@@ -33,12 +33,15 @@ public class AuthController(IOptions<JwtSettings> jwtOptions) : ControllerBase
     {
         var settings = jwtOptions.Value;
 
-        if (!string.IsNullOrEmpty(settings.TestUsername))
-        {
-            if (!request.Username.Equals(settings.TestUsername, StringComparison.OrdinalIgnoreCase) ||
-                request.Password != settings.TestPassword)
-                return Unauthorized(new { error = "Invalid credentials." });
-        }
+        // When TestUsername is not configured the endpoint is disabled — return 401 for every request.
+        // Configure JwtSettings:TestUsername and JwtSettings:TestPassword (e.g. in appsettings.Development.json
+        // or via environment variables / secrets) to enable this endpoint.
+        if (string.IsNullOrEmpty(settings.TestUsername))
+            return Unauthorized(new { error = "Token endpoint is not enabled in this environment." });
+
+        if (!request.Username.Equals(settings.TestUsername, StringComparison.OrdinalIgnoreCase) ||
+            request.Password != settings.TestPassword)
+            return Unauthorized(new { error = "Invalid credentials." });
 
         var token = GenerateToken(settings, request.Username);
 
