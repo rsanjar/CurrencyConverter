@@ -1,5 +1,41 @@
 # Currency Converter API
 
+> 🌐 **Live Demo** — you can test the full stack here:
+>
+> | | URL |
+> |---|---|
+> | **API** | [https://converter-dev.rahmatov.net](https://converter-dev.rahmatov.net) |
+> | **Frontend** | [https://converter-dev-front.rahmatov.net](https://converter-dev-front.rahmatov.net) |
+>
+> CI/CD is configured on the `dev` branch — every push deploys automatically to the URLs above.
+>
+> **Test credentials:**
+> ```json
+> { "username": "testuser", "password": "Test@1234" }
+> ```
+>
+> 📄 Full API documentation is available on this GitHub repository.
+
+---
+
+## How I Used AI (Copilot) for This Project
+
+### Backend
+
+I already had a **DDD architecture** on my GitHub profile, so I asked Copilot to scaffold a new project with all layers taken into account. I used the **GitHub MCP server** to give Copilot direct access to my existing repositories so it could generate everything according to my established patterns. I then asked it to integrate the Frankfurter API and provided the required details.
+
+Features were added in **multiple iterations** to ensure each one was correct and working before moving on — caching, retry policy, circuit breaker, factory pattern, rate limiter, authentication, and observability (Serilog, OpenTelemetry, Grafana). I also use my **own `TheTechLoop.HybridCache` library**, which makes it straightforward to switch to Redis if needed in the future. Once the core was complete, I asked Copilot to generate the unit tests, then reviewed them manually to verify they made sense and that coverage was satisfactory.
+
+### Frontend
+
+Once the backend API was fully ready, I asked Copilot to generate a **React app** based on the existing backend. I provided the requirements for the frontend. After everything was ready I tested it with the test credentials — it worked as expected except for a few minor UI tweaks (such as showing the currency symbol in label titles) which I fixed myself.
+
+I then set up **CI/CD using Coolify** on my own server, added the required environment variables, and deployed both projects.
+
+> **Note:** I did not accept AI-generated code blindly. I always reviewed what was generated and used AI to *critique* its own output — this almost always surfaced a better solution or an optimization opportunity.
+
+---
+
 A production-ready **Currency Converter REST API** built with **.NET 10** and **Clean Architecture**. It wraps the [Frankfurter](https://www.frankfurter.app/) public exchange-rate service and adds JWT authentication, rate limiting, caching, resilience policies, structured logging, and OpenTelemetry observability.
 
 ---
