@@ -6,4 +6,8 @@
     <Project Path="src/CurrencyConverter.Domain/CurrencyConverter.Domain.csproj" />
     <Project Path="src/CurrencyConverter.Infrastructure/CurrencyConverter.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CurrencyConverter.IntegrationTests/CurrencyConverter.IntegrationTests.csproj" />
+    <Project Path="tests/CurrencyConverter.UnitTests/CurrencyConverter.UnitTests.csproj" />
+  </Folder>
 </Solution>

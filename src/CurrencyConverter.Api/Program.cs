@@ -70,3 +70,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Exposes the generated Program class to the integration test project.
+public partial class Program { }
