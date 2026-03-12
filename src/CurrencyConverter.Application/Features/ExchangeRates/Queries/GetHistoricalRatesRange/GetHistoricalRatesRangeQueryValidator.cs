@@ -9,10 +9,12 @@ public class GetHistoricalRatesRangeQueryValidator : AbstractValidator<GetHistor
     public GetHistoricalRatesRangeQueryValidator()
     {
         RuleFor(x => x.StartDate)
+            .NotEmpty().WithMessage("Start date is required.")
             .Must(d => d >= EarliestDate).WithMessage($"Start date must be on or after {EarliestDate:yyyy-MM-dd} (Frankfurter earliest available date).")
             .Must(d => d <= DateOnly.FromDateTime(DateTime.UtcNow)).WithMessage("Start date cannot be in the future.");
 
         RuleFor(x => x.EndDate)
+            .NotEmpty().WithMessage("End date is required.")
             .Must(d => d >= EarliestDate).WithMessage($"End date must be on or after {EarliestDate:yyyy-MM-dd} (Frankfurter earliest available date).")
             .Must(d => d <= DateOnly.FromDateTime(DateTime.UtcNow)).WithMessage("End date cannot be in the future.")
             .Must((request, endDate) => endDate >= request.StartDate)

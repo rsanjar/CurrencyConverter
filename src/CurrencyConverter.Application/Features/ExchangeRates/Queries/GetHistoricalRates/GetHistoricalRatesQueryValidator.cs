@@ -9,6 +9,7 @@ public class GetHistoricalRatesQueryValidator : AbstractValidator<GetHistoricalR
     public GetHistoricalRatesQueryValidator()
     {
         RuleFor(x => x.Date)
+            .NotEmpty().WithMessage("Date is required.")
             .Must(d => d >= EarliestDate).WithMessage($"Date must be on or after {EarliestDate:yyyy-MM-dd} (Frankfurter earliest available date).")
             .Must(d => d <= DateOnly.FromDateTime(DateTime.UtcNow)).WithMessage("Date cannot be in the future.");
 
