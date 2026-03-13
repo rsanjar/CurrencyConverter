@@ -91,6 +91,12 @@ public static class ServiceCollectionExtensions
         /// The <c>api-supported-versions</c> and <c>api-deprecated-versions</c> headers
         /// are included in every response when <c>ReportApiVersions</c> is <c>true</c>.
         /// </para>
+        /// <para>
+        /// <see cref="Asp.Versioning.ApiExplorerOptions.SubstituteApiVersionInUrl"/> is set to
+        /// <see langword="true"/> so the OpenAPI document replaces <c>{version:apiVersion}</c> with
+        /// the concrete version value (e.g. <c>v1</c>), removing the manual path-parameter entry
+        /// from the Scalar UI.
+        /// </para>
         /// </summary>
         public IServiceCollection AddVersioning()
         {
@@ -100,6 +106,17 @@ public static class ServiceCollectionExtensions
                 options.AssumeDefaultVersionWhenUnspecified = true;
                 options.ReportApiVersions = true;
                 options.ApiVersionReader = new UrlSegmentApiVersionReader();
+            })
+            .AddMvc()
+            .AddApiExplorer(options =>
+            {
+                // Format as 'v1', 'v2', … matching the route segment convention.
+                options.GroupNameFormat = "'v'VVV";
+
+                // Substitute {version:apiVersion} with the actual value in every URL template,
+                // so Scalar shows /api/v1/... instead of /api/v{version}/... and users never
+                // have to type the version into a path-parameter box.
+                options.SubstituteApiVersionInUrl = true;
             });
 
             return services;
