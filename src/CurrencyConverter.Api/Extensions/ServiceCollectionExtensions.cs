@@ -16,60 +16,69 @@ public static class ServiceCollectionExtensions
     {
         
         /// <summary>
-        /// Configures OpenAPI documentation generation for the application with the specified title, version, and
-        /// description.
+        /// Configures OpenAPI documentation generation for the application.
+        /// One OpenAPI document is registered per entry in <paramref name="versions"/>;
+        /// each document is served at <c>/openapi/{version}.json</c> and appears as a
+        /// separate entry in the Scalar version drop-down.
         /// </summary>
-        /// <remarks>This method customizes the OpenAPI document by setting its general information and
-        /// modifying operation security requirements based on the presence of the <see
-        /// cref="AllowAnonymousAttribute"/>. Operations marked as anonymous will not require authorization in the
-        /// generated documentation.</remarks>
-        /// <param name="title">The title to display in the generated OpenAPI documentation.</param>
-        /// <param name="version">The version of the OpenAPI documentation. The default value is "v1".</param>
-        /// <param name="description">A brief description of the API to include in the OpenAPI documentation.</param>
-        /// <returns>The <see cref="IServiceCollection"/> instance, enabling further configuration of the service collection.</returns>
-        public IServiceCollection AddCustomOpenApi(string title, string version = "v1", string description = "")
+        /// <param name="title">The base title shown in both Scalar and the OpenAPI document.</param>
+        /// <param name="versions">
+        /// API version names to register (e.g. <c>["v1", "v2"]</c>).
+        /// Defaults to <c>["v1"]</c> when <see langword="null"/>.
+        /// </param>
+        /// <param name="description">Optional description added to every version document.</param>
+        public IServiceCollection AddCustomOpenApi(string title, string[]? versions = null, string description = "")
         {
-            services.AddOpenApi(options =>
+            var versionList = versions ?? ["v1"];
+
+            foreach (var version in versionList)
             {
-                options.AddDocumentTransformer((document, context, _) =>
+                // Capture loop variable for use inside the lambda.
+                var v = version;
+
+                services.AddOpenApi(v, options =>
                 {
-                    document.Info.Title = title;
-                    document.Info.Version = version;
-                    if (!string.IsNullOrEmpty(description))
-                        document.Info.Description = description;
-
-                    document.Components ??= new OpenApiComponents();
-                    document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
-                    document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+                    options.AddDocumentTransformer((document, _, _) =>
                     {
-                        In = ParameterLocation.Header,
-                        Name = "Authorization",
-                        Type = SecuritySchemeType.Http,
-                        Scheme = "bearer",
-                        BearerFormat = "JWT",
-                        Description = "JWT Authorization header using the Bearer scheme. (only the token, no 'Bearer' prefix)"
-                    };
+                        document.Info.Title = versionList.Length > 1 ? $"{title} {v.ToUpper()}" : title;
+                        document.Info.Version = v;
 
-                    return Task.CompletedTask;
-                });
+                        if (!string.IsNullOrEmpty(description))
+                            document.Info.Description = description;
 
-                // Apply Bearer requirement per-operation; skip for [AllowAnonymous] endpoints
-                options.AddOperationTransformer((operation, context, _) =>
-                {
-                    var metadata = context.Description.ActionDescriptor.EndpointMetadata;
-                    bool isAnonymous = metadata.Any(m => m is AllowAnonymousAttribute);
-
-                    if (!isAnonymous)
-                    {
-                        operation.Security = [new OpenApiSecurityRequirement
+                        document.Components ??= new OpenApiComponents();
+                        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+                        document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
                         {
-                            [new OpenApiSecuritySchemeReference("Bearer", context.Document)] = []
-                        }];
-                    }
+                            In = ParameterLocation.Header,
+                            Name = "Authorization",
+                            Type = SecuritySchemeType.Http,
+                            Scheme = "bearer",
+                            BearerFormat = "JWT",
+                            Description = "JWT Authorization header using the Bearer scheme. (only the token, no 'Bearer' prefix)"
+                        };
 
-                    return Task.CompletedTask;
+                        return Task.CompletedTask;
+                    });
+
+                    // Apply Bearer requirement per-operation; skip for [AllowAnonymous] endpoints.
+                    options.AddOperationTransformer((operation, context, _) =>
+                    {
+                        var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+                        bool isAnonymous = metadata.Any(m => m is AllowAnonymousAttribute);
+
+                        if (!isAnonymous)
+                        {
+                            operation.Security = [new OpenApiSecurityRequirement
+                            {
+                                [new OpenApiSecuritySchemeReference("Bearer", context.Document)] = []
+                            }];
+                        }
+
+                        return Task.CompletedTask;
+                    });
                 });
-            });
+            }
 
             return services;
         }
@@ -136,22 +145,27 @@ public static class ServiceCollectionExtensions
     extension(WebApplication app)
     {
         /// <summary>
-        /// Maps the OpenAPI endpoint and configures the Scalar API reference UI.
-        /// Also redirects <c>GET /</c> to the Scalar UI.
+        /// Maps one OpenAPI endpoint per registered version and configures the Scalar API reference UI.
+        /// Each version appears as a separate entry in the Scalar version drop-down.
+        /// Also redirects <c>GET /</c> to the Scalar UI for the first version.
         /// </summary>
-        /// <remarks>Call this in the application pipeline after <c>UseRouting</c> and <c>UseAuthorization</c>.
-        /// The OpenAPI document output is cached using output caching.</remarks>
-        /// <param name="title">The title shown in the Scalar UI header.</param>
-        /// <param name="version">The OpenAPI document version segment used in the Scalar route. Defaults to "v1".</param>
+        /// <param name="title">The base title shown in the Scalar UI header.</param>
+        /// <param name="versions">
+        /// API version names to expose (e.g. <c>["v1", "v2"]</c>).
+        /// Must match the names passed to <see cref="AddCustomOpenApi"/>.
+        /// Defaults to <c>["v1"]</c> when <see langword="null"/>.
+        /// </param>
         /// <param name="theme">The visual theme for the Scalar UI. Defaults to <see cref="ScalarTheme.Moon"/>.</param>
         /// <param name="layout">The page layout for the Scalar UI. Defaults to <see cref="ScalarLayout.Modern"/>.</param>
         /// <param name="target">The HTTP client language target for code samples. Defaults to <see cref="ScalarTarget.JavaScript"/>.</param>
         /// <param name="client">The HTTP client library for code samples. Defaults to <see cref="ScalarClient.Fetch"/>.</param>
-        /// <returns>The <see cref="WebApplication"/> instance for further chaining.</returns>
-        public WebApplication MapCustomOpenApi(string title = "API", string version = "v1",
+        public WebApplication MapCustomOpenApi(string title = "API", string[]? versions = null,
             ScalarTheme theme = ScalarTheme.Moon, ScalarLayout layout = ScalarLayout.Modern,
             ScalarTarget target = ScalarTarget.JavaScript, ScalarClient client = ScalarClient.Fetch)
         {
+            var versionList = versions ?? ["v1"];
+
+            // Serves /openapi/{documentName}.json for every registered document.
             app.MapOpenApi().CacheOutput();
 
             app.MapScalarApiReference(options =>
@@ -162,9 +176,13 @@ public static class ServiceCollectionExtensions
                 options.Layout = layout;
                 options.DefaultHttpClient = KeyValuePair.Create(target, client);
                 options.AddPreferredSecuritySchemes("Bearer");
+
+                // Each call to AddDocument adds one entry to the Scalar version drop-down.
+                foreach (var version in versionList)
+                    options.AddDocument($"/openapi/{version}.json", $"{title} {version.ToUpper()}");
             });
 
-            app.MapGet("/", () => Results.Redirect($"/scalar/{version}"));
+            app.MapGet("/", () => Results.Redirect($"/scalar/{versionList[0]}"));
 
             return app;
         }

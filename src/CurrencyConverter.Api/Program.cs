@@ -20,7 +20,7 @@ builder.Services.ForwardHeaders();
 builder.Services.AddControllers();
 builder.Services.AddVersioning();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddCustomOpenApi("Currency Converter API");
+builder.Services.AddCustomOpenApi("Currency Converter API", ["v1"]);
 builder.Services.AddCurrentUser();
 
 // Add Application and Infrastructure layers
@@ -62,7 +62,7 @@ app.UseRequestLogging();
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
-    app.MapCustomOpenApi("Currency Converter API");
+    app.MapCustomOpenApi("Currency Converter API", ["v1"]);
 }
 
 // Health check endpoints
