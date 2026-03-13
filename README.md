@@ -59,6 +59,7 @@ A production-ready **Currency Converter REST API** built with **.NET 10** and **
   - [RateLimiting](#ratelimiting)
   - [Cors](#cors)
   - [TheTechLoopCache](#thetechloopcache)
+- [API Versioning](#api-versioning)
 - [Authentication](#authentication)
 - [Rate Limiting](#rate-limiting)
 - [Caching](#caching)
@@ -85,7 +86,8 @@ A production-ready **Currency Converter REST API** built with **.NET 10** and **
 | **Distributed Tracing** | OpenTelemetry traces exported to Grafana Tempo via OTLP |
 | **Metrics** | ASP.NET Core, HttpClient, and .NET runtime metrics scraped by Prometheus |
 | **Health Checks** | `/health` (liveness) and `/health/ready` endpoints |
-| **OpenAPI / Scalar UI** | Auto-generated docs with Bearer auth support at `/scalar/v1` |
+| **API Versioning** | URL-segment versioning (`/api/v1/...`). Per-version OpenAPI documents with a Scalar drop-down selector. Adding v2 requires changing two lines. |
+| **OpenAPI / Scalar UI** | Per-version docs with Bearer auth; version drop-down in the Scalar UI at `/scalar/v1` |
 | **CORS** | Fully configurable allowed origins, methods, headers, and credentials |
 | **Global Exception Handling** | Middleware converts all unhandled exceptions to structured JSON responses |
 | **Docker** | Multi-stage `Dockerfile` — tests must pass before a deployable image is produced |
@@ -131,8 +133,8 @@ CurrencyConverter/
 ├── src/
 │   ├── CurrencyConverter.Api/            # Entry point, controllers, middleware
 │   │   ├── Controllers/
-│   │   │   ├── AuthController.cs         # POST /api/auth/token
-│   │   │   ├── CurrenciesController.cs   # GET  /api/currencies
+│   │   │   ├── AuthController.cs         # POST /api/v{n}/auth/token
+│   │   │   ├── CurrenciesController.cs   # GET  /api/v{n}/currencies
 │   │   │   └── ExchangeRatesController.cs
 │   │   ├── Configuration/                # RateLimitingOptions
 │   │   ├── Extensions/                   # Serilog, OpenTelemetry, rate limiting, OpenAPI
@@ -152,13 +154,13 @@ CurrencyConverter/
 
 ## API Endpoints
 
-All endpoints except `POST /api/auth/token` require a valid **JWT Bearer** token.
+All endpoints except `POST /api/v1/auth/token` require a valid **JWT Bearer** token.
 
 ### Auth
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/auth/token` | Issues a JWT. Only enabled when `JwtSettings:TestUsername` is set. |
+| `POST` | `/api/v1/auth/token` | Issues a JWT. Only enabled when `JwtSettings:TestUsername` is set. |
 
 **Request body:**
 ```json
@@ -176,7 +178,7 @@ All endpoints except `POST /api/auth/token` require a valid **JWT Bearer** token
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/currencies` | Returns all currencies supported by Frankfurter. |
+| `GET` | `/api/v1/currencies` | Returns all currencies supported by Frankfurter. |
 
 ---
 
@@ -184,27 +186,27 @@ All endpoints except `POST /api/auth/token` require a valid **JWT Bearer** token
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/exchangerates/conversion` | Latest rates from a base currency to one or many targets. |
-| `POST` | `/api/exchangerates/by-date` | Historical rates for a specific date. |
-| `POST` | `/api/exchangerates/amount-conversion` | Converts an amount from one currency to one or more targets. |
-| `POST` | `/api/exchangerates/history` | Historical rates over a date range with pagination. |
+| `POST` | `/api/v1/exchangerates/conversion` | Latest rates from a base currency to one or many targets. |
+| `POST` | `/api/v1/exchangerates/by-date` | Historical rates for a specific date. |
+| `POST` | `/api/v1/exchangerates/amount-conversion` | Converts an amount from one currency to one or more targets. |
+| `POST` | `/api/v1/exchangerates/history` | Historical rates over a date range with pagination. |
 
-#### `POST /api/exchangerates/conversion`
+#### `POST /api/v1/exchangerates/conversion`
 ```json
 { "baseCurrency": "USD", "targetCurrencies": ["EUR", "GBP"] }
 ```
 
-#### `POST /api/exchangerates/by-date`
+#### `POST /api/v1/exchangerates/by-date`
 ```json
 { "date": "2024-01-15", "baseCurrency": "USD", "targetCurrencies": ["EUR"] }
 ```
 
-#### `POST /api/exchangerates/amount-conversion`
+#### `POST /api/v1/exchangerates/amount-conversion`
 ```json
 { "amount": 100.00, "fromCurrency": "USD", "toCurrencies": ["EUR", "GBP", "JPY"] }
 ```
 
-#### `POST /api/exchangerates/history`
+#### `POST /api/v1/exchangerates/history`
 ```json
 {
   "startDate": "2024-01-01",
@@ -413,7 +415,7 @@ Controls JWT bearer token validation and issuance. Supports both **symmetric** (
 | `PublicKey` | `string` | `""` | RSA public key in PEM format (`-----BEGIN PUBLIC KEY-----...`). When non-empty, asymmetric RSA validation is used instead of HMAC. |
 | `Issuer` | `string` | `CurrencyConverter` | Expected `iss` claim in incoming tokens. Validation is skipped when this value is empty. |
 | `Audience` | `string` | `CurrencyConverter` | Expected `aud` claim in incoming tokens. Validation is skipped when this value is empty. |
-| `ExpirationMinutes` | `int` | `60` | Lifetime in minutes of tokens issued by `POST /api/auth/token`. |
+| `ExpirationMinutes` | `int` | `60` | Lifetime in minutes of tokens issued by `POST /api/v1/auth/token`. |
 | `TestUsername` | `string` | `""` | Username accepted by the test token endpoint. **Leave empty in production** to disable the endpoint entirely. |
 | `TestPassword` | `string` | `""` | Password accepted by the test token endpoint. **Leave empty in production.** |
 
@@ -449,7 +451,7 @@ All three policies use a **fixed-window** algorithm. Rejected requests receive `
 |---|---|---|---|
 | `Enabled` | `bool` | `true` | Master switch. Set to `false` to disable all rate limiting (useful in tests). |
 | **`Authenticated`** | object | — | Fixed-window policy for authenticated API endpoints, partitioned **per username** extracted from the JWT. |
-| **`Auth`** | object | — | Fixed-window policy for `POST /api/auth/token`, partitioned **per client IP** to prevent credential brute-forcing. |
+| **`Auth`** | object | — | Fixed-window policy for `POST /api/v{n}/auth/token`, partitioned **per client IP** to prevent credential brute-forcing. |
 | **`GlobalIp`** | object | — | Global ceiling applied to **every** request, partitioned per client IP. Evaluated before any named policy. |
 
 Each policy object (`Authenticated`, `Auth`, `GlobalIp`) shares the same fields:
@@ -519,9 +521,59 @@ Configures `TheTechLoop.HybridCache`, a first-party caching library that integra
 
 ---
 
+## API Versioning
+
+All routes are prefixed with a URL version segment: `/api/v{n}/...`. The current version is **v1**.
+
+### Strategy
+
+| Aspect | Detail |
+|---|---|
+| **Style** | URL-segment — explicit, cache-friendly, and trivially routable at the reverse-proxy level |
+| **Default version** | `1.0` — requests that omit the version segment are treated as v1 |
+| **Version header** | Every response includes `api-supported-versions: 1.0` (`ReportApiVersions = true`) |
+| **OpenAPI docs** | One document per version at `/openapi/v{n}.json`; each appears in the Scalar drop-down |
+| **Scalar UI** | Version drop-down at the top — selecting a version loads its document and pre-fills all URLs with the correct version, so no manual entry is needed |
+
+### NuGet packages
+
+| Package | Role |
+|---|---|
+| `Asp.Versioning.Http` | Core versioning for ASP.NET Core endpoint routing |
+| `Asp.Versioning.Mvc` | Wires versioning into the MVC controller pipeline |
+| `Asp.Versioning.Mvc.ApiExplorer` | Provides `SubstituteApiVersionInUrl` — replaces `{version:apiVersion}` with the concrete value in the OpenAPI spec |
+
+### Controller annotation
+
+Every controller is decorated with `[ApiVersion("1.0")]` and uses the shared route prefix:
+
+```csharp
+[ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
+```
+
+### Adding v2
+
+Only two lines in `Program.cs` need to change:
+
+```csharp
+// Before
+builder.Services.AddCustomOpenApi("Currency Converter API", ["v1"]);
+app.MapCustomOpenApi("Currency Converter API", ["v1"]);
+
+// After
+builder.Services.AddCustomOpenApi("Currency Converter API", ["v1", "v2"]);
+app.MapCustomOpenApi("Currency Converter API", ["v1", "v2"]);
+```
+
+Then create a new controller with `[ApiVersion("2.0")]`. The v1 controllers remain unchanged.
+
+---
+
 ## Authentication
 
-The API uses **JWT Bearer** authentication. Obtain a token from `POST /api/auth/token` (development only) and pass it in the `Authorization` header:
+The API uses **JWT Bearer** authentication. Obtain a token from `POST /api/v1/auth/token` (development only) and pass it in the `Authorization` header:
 
 ```
 Authorization: Bearer <token>
