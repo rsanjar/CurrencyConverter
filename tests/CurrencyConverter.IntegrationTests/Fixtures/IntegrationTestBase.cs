@@ -34,7 +34,7 @@ public abstract class IntegrationTestBase : IClassFixture<WebAppFactory>
     /// <summary>Obtains a JWT from the auth endpoint using the configured test credentials.</summary>
     protected async Task<string> GetAuthTokenAsync(string username = "testuser", string password = "testpass")
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/token", new { Username = username, Password = password });
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/token", new { Username = username, Password = password });
         response.EnsureSuccessStatusCode();
 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);

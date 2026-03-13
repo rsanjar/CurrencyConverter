@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using CurrencyConverter.Api.Configuration;
 using CurrencyConverter.Api.Extensions;
 using CurrencyConverter.Application.Features.ExchangeRates.Queries.ConvertCurrency;
@@ -13,7 +14,8 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace CurrencyConverter.Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Authorize]
 [EnableRateLimiting(RateLimitPolicies.Authenticated)]
 public class ExchangeRatesController(IMediator mediator) : ControllerBase

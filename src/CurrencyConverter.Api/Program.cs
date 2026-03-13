@@ -18,6 +18,7 @@ builder.Services.ForwardHeaders();
 
 // Add services to the container
 builder.Services.AddControllers();
+builder.Services.AddVersioning();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddCustomOpenApi("Currency Converter API");
 builder.Services.AddCurrentUser();

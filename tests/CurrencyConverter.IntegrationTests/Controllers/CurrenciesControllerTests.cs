@@ -11,7 +11,7 @@ public class CurrenciesControllerTests(WebAppFactory factory) : IntegrationTestB
     [Fact]
     public async Task GetAll_WithoutAuth_Returns401()
     {
-        var response = await Client.GetAsync("/api/currencies");
+        var response = await Client.GetAsync("/api/v1/currencies");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -24,7 +24,7 @@ public class CurrenciesControllerTests(WebAppFactory factory) : IntegrationTestB
             .Returns(new Dictionary<string, string> { ["EUR"] = "Euro", ["USD"] = "US Dollar" });
         await AuthenticateAsync();
 
-        var response = await Client.GetAsync("/api/currencies");
+        var response = await Client.GetAsync("/api/v1/currencies");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -37,7 +37,7 @@ public class CurrenciesControllerTests(WebAppFactory factory) : IntegrationTestB
             .Returns(new Dictionary<string, string> { ["EUR"] = "Euro" });
         await AuthenticateAsync();
 
-        var response = await Client.GetAsync("/api/currencies");
+        var response = await Client.GetAsync("/api/v1/currencies");
         var body = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         var eurEntry = body!.First(c => c.GetProperty("code").GetString() == "EUR");
@@ -57,7 +57,7 @@ public class CurrenciesControllerTests(WebAppFactory factory) : IntegrationTestB
             });
         await AuthenticateAsync();
 
-        var response = await Client.GetAsync("/api/currencies");
+        var response = await Client.GetAsync("/api/v1/currencies");
         var body = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         var codes = body!.Select(c => c.GetProperty("code").GetString()).ToArray();
@@ -72,7 +72,7 @@ public class CurrenciesControllerTests(WebAppFactory factory) : IntegrationTestB
             .Returns(new Dictionary<string, string>());
         await AuthenticateAsync();
 
-        var response = await Client.GetAsync("/api/currencies");
+        var response = await Client.GetAsync("/api/v1/currencies");
 
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
     }
@@ -87,7 +87,7 @@ public class CurrenciesControllerTests(WebAppFactory factory) : IntegrationTestB
             .Returns(currencies);
         await AuthenticateAsync();
 
-        var response = await Client.GetAsync("/api/currencies");
+        var response = await Client.GetAsync("/api/v1/currencies");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }

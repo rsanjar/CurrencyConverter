@@ -1,4 +1,5 @@
-﻿using CurrencyConverter.Api.Middleware;
+﻿using Asp.Versioning;
+using CurrencyConverter.Api.Middleware;
 using CurrencyConverter.Api.Services;
 using CurrencyConverter.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -68,6 +69,28 @@ public static class ServiceCollectionExtensions
 
                     return Task.CompletedTask;
                 });
+            });
+
+            return services;
+        }
+
+        /// <summary>
+        /// Registers URL-segment API versioning with a default version of 1.0.
+        /// <para>
+        /// All versioned routes use the <c>/api/v{version}/</c> prefix.
+        /// Requests that omit the version segment are treated as v1.0.
+        /// The <c>api-supported-versions</c> and <c>api-deprecated-versions</c> headers
+        /// are included in every response when <c>ReportApiVersions</c> is <c>true</c>.
+        /// </para>
+        /// </summary>
+        public IServiceCollection AddVersioning()
+        {
+            services.AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ReportApiVersions = true;
+                options.ApiVersionReader = new UrlSegmentApiVersionReader();
             });
 
             return services;

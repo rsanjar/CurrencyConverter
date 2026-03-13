@@ -10,7 +10,7 @@ public class AuthControllerTests(WebAppFactory factory) : IntegrationTestBase(fa
     [Fact]
     public async Task PostToken_WithInvalidCredentials_Returns401()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/token",
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/token",
             new { Username = "anyone", Password = "anypass" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -19,7 +19,7 @@ public class AuthControllerTests(WebAppFactory factory) : IntegrationTestBase(fa
     [Fact]
     public async Task PostToken_ReturnsNonEmptyToken()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/token",
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/token",
             new { Username = "testuser", Password = "testpass" });
 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -29,7 +29,7 @@ public class AuthControllerTests(WebAppFactory factory) : IntegrationTestBase(fa
     [Fact]
     public async Task PostToken_ReturnsPositiveExpiresIn()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/token",
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/token",
             new { Username = "testuser", Password = "testpass" });
 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -39,7 +39,7 @@ public class AuthControllerTests(WebAppFactory factory) : IntegrationTestBase(fa
     [Fact]
     public async Task PostToken_TokenHasThreeJwtSegments()
     {
-        var response = await Client.PostAsJsonAsync("/api/auth/token",
+        var response = await Client.PostAsJsonAsync("/api/v1/auth/token",
             new { Username = "testuser", Password = "testpass" });
 
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -51,7 +51,7 @@ public class AuthControllerTests(WebAppFactory factory) : IntegrationTestBase(fa
     [Fact]
     public async Task PostToken_IssuedTokenAuthenticatesSubsequentRequests()
     {
-        var tokenResponse = await Client.PostAsJsonAsync("/api/auth/token",
+        var tokenResponse = await Client.PostAsJsonAsync("/api/v1/auth/token",
             new { Username = "testuser", Password = "testpass" });
         var body = await tokenResponse.Content.ReadFromJsonAsync<JsonElement>();
         var token = body.GetProperty("token").GetString()!;
@@ -63,7 +63,7 @@ public class AuthControllerTests(WebAppFactory factory) : IntegrationTestBase(fa
             .GetAvailableCurrenciesAsync(Arg.Any<CancellationToken>())
             .Returns(new Dictionary<string, string> { ["EUR"] = "Euro" });
 
-        var currenciesResponse = await Client.GetAsync("/api/currencies");
+        var currenciesResponse = await Client.GetAsync("/api/v1/currencies");
 
         currenciesResponse.StatusCode.Should().Be(HttpStatusCode.OK);
     }

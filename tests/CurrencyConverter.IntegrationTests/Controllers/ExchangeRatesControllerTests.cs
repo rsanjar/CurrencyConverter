@@ -28,10 +28,10 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     // ── Unauthenticated requests ──────────────────────────────────────────────
 
     [Theory]
-    [InlineData("/api/exchangerates/conversion")]
-    [InlineData("/api/exchangerates/by-date")]
-    [InlineData("/api/exchangerates/amount-conversion")]
-    [InlineData("/api/exchangerates/history")]
+    [InlineData("/api/v1/exchangerates/conversion")]
+    [InlineData("/api/v1/exchangerates/by-date")]
+    [InlineData("/api/v1/exchangerates/amount-conversion")]
+    [InlineData("/api/v1/exchangerates/history")]
     public async Task AllEndpoints_WithoutAuth_Return401(string endpoint)
     {
         var response = await Client.PostAsJsonAsync(endpoint, new { });
@@ -49,7 +49,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
             .Returns(SampleRateData("USD"));
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/conversion",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/conversion",
             new { BaseCurrency = "USD" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -62,7 +62,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     {
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/conversion",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/conversion",
             new { BaseCurrency = "INVALID" });
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -73,7 +73,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     {
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/conversion",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/conversion",
             new { BaseCurrency = "1US" });
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -89,7 +89,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
             .Returns(SampleRateData());
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/by-date",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/by-date",
             new { Date = new DateOnly(2023, 6, 15), BaseCurrency = "EUR" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -101,7 +101,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
         await AuthenticateAsync();
         var futureDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(5));
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/by-date",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/by-date",
             new { Date = futureDate, BaseCurrency = "EUR" });
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -112,7 +112,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     {
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/by-date",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/by-date",
             new { Date = new DateOnly(1998, 12, 31), BaseCurrency = "EUR" });
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -128,7 +128,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
             .Returns(SampleRateData());
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/amount-conversion",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/amount-conversion",
             new { Amount = 100m, FromCurrency = "EUR", ToCurrencies = new[] { "GBP" } });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -143,7 +143,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     {
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/amount-conversion",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/amount-conversion",
             new { Amount = 100m, FromCurrency = restricted, ToCurrencies = new[] { "USD" } });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -158,7 +158,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     {
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/amount-conversion",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/amount-conversion",
             new { Amount = 100m, FromCurrency = "EUR", ToCurrencies = new[] { restricted } });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -169,7 +169,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     {
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/amount-conversion",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/amount-conversion",
             new { Amount = 0m, FromCurrency = "EUR", ToCurrencies = new[] { "USD" } });
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -180,7 +180,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     {
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/amount-conversion",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/amount-conversion",
             new { Amount = -50m, FromCurrency = "EUR", ToCurrencies = new[] { "USD" } });
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -191,7 +191,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     {
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/amount-conversion",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/amount-conversion",
             new { Amount = 100m, FromCurrency = "EUR", ToCurrencies = Array.Empty<string>() });
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -207,7 +207,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
             .Returns(SampleRangeData());
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/history",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/history",
             new { StartDate = new DateOnly(2023, 1, 2), EndDate = new DateOnly(2023, 1, 3), BaseCurrency = "GBP", Page = 1, PageSize = 10 });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -222,7 +222,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     {
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/history",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/history",
             new { StartDate = new DateOnly(2023, 1, 2), EndDate = new DateOnly(2023, 1, 3), BaseCurrency = "EUR", Page = 1, PageSize = 0 });
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -233,7 +233,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     {
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/history",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/history",
             new { StartDate = new DateOnly(2023, 1, 2), EndDate = new DateOnly(2023, 1, 3), BaseCurrency = "EUR", Page = 1, PageSize = 101 });
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
@@ -244,7 +244,7 @@ public class ExchangeRatesControllerTests(WebAppFactory factory) : IntegrationTe
     {
         await AuthenticateAsync();
 
-        var response = await Client.PostAsJsonAsync("/api/exchangerates/history",
+        var response = await Client.PostAsJsonAsync("/api/v1/exchangerates/history",
             new { StartDate = new DateOnly(2023, 6, 1), EndDate = new DateOnly(2023, 5, 1), BaseCurrency = "EUR", Page = 1, PageSize = 20 });
 
         response.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);

@@ -142,9 +142,9 @@ public class RateLimitingTests(RateLimitingWebAppFactory factory)
         var body   = new { BaseCurrency = "EUR" };
 
         // PermitLimit = 2 → first two succeed, third is rejected.
-        var r1 = await client.SendAsync(Post("/api/exchangerates/conversion", body, token));
-        var r2 = await client.SendAsync(Post("/api/exchangerates/conversion", body, token));
-        var r3 = await client.SendAsync(Post("/api/exchangerates/conversion", body, token));
+        var r1 = await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, token));
+        var r2 = await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, token));
+        var r3 = await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, token));
 
         r1.StatusCode.Should().Be(HttpStatusCode.OK);
         r2.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -163,9 +163,9 @@ public class RateLimitingTests(RateLimitingWebAppFactory factory)
         var body   = new { BaseCurrency = "EUR" };
 
         for (var i = 0; i < 2; i++)
-            await client.SendAsync(Post("/api/exchangerates/conversion", body, token));
+            await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, token));
 
-        var rejected = await client.SendAsync(Post("/api/exchangerates/conversion", body, token));
+        var rejected = await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, token));
 
         rejected.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
         rejected.Headers.Should().ContainKey("Retry-After");
@@ -184,9 +184,9 @@ public class RateLimitingTests(RateLimitingWebAppFactory factory)
         var body   = new { BaseCurrency = "EUR" };
 
         for (var i = 0; i < 2; i++)
-            await client.SendAsync(Post("/api/exchangerates/conversion", body, token));
+            await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, token));
 
-        var rejected = await client.SendAsync(Post("/api/exchangerates/conversion", body, token));
+        var rejected = await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, token));
         var json     = await rejected.Content.ReadFromJsonAsync<JsonElement>();
 
         rejected.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
@@ -207,10 +207,10 @@ public class RateLimitingTests(RateLimitingWebAppFactory factory)
 
         // Exhaust user-1's budget.
         for (var i = 0; i < 2; i++)
-            await client.SendAsync(Post("/api/exchangerates/conversion", body, token1));
+            await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, token1));
 
-        var user1Rejected = await client.SendAsync(Post("/api/exchangerates/conversion", body, token1));
-        var user2Allowed  = await client.SendAsync(Post("/api/exchangerates/conversion", body, token2));
+        var user1Rejected = await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, token1));
+        var user2Allowed  = await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, token2));
 
         user1Rejected.StatusCode.Should().Be(HttpStatusCode.TooManyRequests,
             "user-1 has exhausted its rate-limit window");
@@ -232,12 +232,12 @@ public class RateLimitingTests(RateLimitingWebAppFactory factory)
         var token  = UniqueToken();
 
         // Spend first two permits across different endpoints.
-        var r1 = await client.SendAsync(Get("/api/currencies", token));
-        var r2 = await client.SendAsync(Post("/api/exchangerates/conversion",
+        var r1 = await client.SendAsync(Get("/api/v1/currencies", token));
+        var r2 = await client.SendAsync(Post("/api/v1/exchangerates/conversion",
             new { BaseCurrency = "EUR" }, token));
 
         // Third request (any endpoint) must now be rejected.
-        var r3 = await client.SendAsync(Post("/api/exchangerates/conversion",
+        var r3 = await client.SendAsync(Post("/api/v1/exchangerates/conversion",
             new { BaseCurrency = "EUR" }, token));
 
         r1.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -359,11 +359,11 @@ public class GlobalIpRateLimitingTests(GlobalIpRateLimitingWebAppFactory factory
         var body   = new { BaseCurrency = "EUR" };
 
         // GlobalIp PermitLimit = 3 → each with a distinct token (different users).
-        var r1 = await client.SendAsync(Post("/api/exchangerates/conversion", body, UniqueToken()));
-        var r2 = await client.SendAsync(Post("/api/exchangerates/conversion", body, UniqueToken()));
-        var r3 = await client.SendAsync(Post("/api/exchangerates/conversion", body, UniqueToken()));
+        var r1 = await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, UniqueToken()));
+        var r2 = await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, UniqueToken()));
+        var r3 = await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, UniqueToken()));
         // 4th user — would be within the per-user limit, but the IP ceiling is exhausted.
-        var r4 = await client.SendAsync(Post("/api/exchangerates/conversion", body, UniqueToken()));
+        var r4 = await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, UniqueToken()));
 
         r1.StatusCode.Should().Be(HttpStatusCode.OK);
         r2.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -384,9 +384,9 @@ public class GlobalIpRateLimitingTests(GlobalIpRateLimitingWebAppFactory factory
 
         // Exhaust the 3-request global window.
         for (var i = 0; i < 3; i++)
-            await client.SendAsync(Post("/api/exchangerates/conversion", body, UniqueToken()));
+            await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, UniqueToken()));
 
-        var rejected = await client.SendAsync(Post("/api/exchangerates/conversion", body, UniqueToken()));
+        var rejected = await client.SendAsync(Post("/api/v1/exchangerates/conversion", body, UniqueToken()));
 
         rejected.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
         rejected.Headers.Should().ContainKey("Retry-After");

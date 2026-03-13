@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -20,7 +21,8 @@ namespace CurrencyConverter.Api.Controllers;
 /// </para>
 /// </summary>
 [ApiController]
-[Route("api/auth")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/auth")]
 [AllowAnonymous]
 [EnableRateLimiting(RateLimitPolicies.Auth)]
 public class AuthController(IOptions<JwtSettings> jwtOptions) : ControllerBase
